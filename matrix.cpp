@@ -283,6 +283,7 @@ Matrix Matrix::transpose()
     return transposed;
 }
 
+/*
 Matrix Matrix::invert()
 {
     double det = this->determinant();
@@ -293,4 +294,57 @@ Matrix Matrix::invert()
     Matrix adjugate = this->cofactorMatrix().transpose();
     return adjugate/det;
 }
+*/
 
+Matrix Matrix::invert() 
+{
+    if (this->m_nRows != this->m_nCols) {
+        throw std::invalid_argument("Matrix must be square for inversion");
+    }
+
+    size_t n = m_nRows;
+    Matrix result(n, n);
+    std::vector<std::vector<double>> augmentedMatrix(n, std::vector<double>(2 * n, 0.0));
+
+    // Initialize augmented matrix [A | I]
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < n; ++j) {
+            augmentedMatrix[i][j] = m_M[i][j];
+            augmentedMatrix[i][j + n] = (i == j) ? 1.0 : 0.0;
+        }
+    }
+
+    // Gaussian elimination
+    for (size_t i = 0; i < n; ++i) {
+        double pivot = augmentedMatrix[i][i];
+
+        if (pivot == 0.0) {
+            throw std::invalid_argument("Matrix is not invertible");
+        }
+
+        // Scale the current row to make the pivot 1
+        for (size_t j = 0; j < 2 * n; ++j) {
+            augmentedMatrix[i][j] /= pivot;
+        }
+
+        // Eliminate other rows
+        for (size_t k = 0; k < n; ++k) {
+            if (k != i) {
+                double factor = augmentedMatrix[k][i];
+
+                for (size_t j = 0; j < 2 * n; ++j) {
+                    augmentedMatrix[k][j] -= factor * augmentedMatrix[i][j];
+                }
+            }
+        }
+    }
+
+    // Extract the inverted matrix from the augmented matrix
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < n; ++j) {
+            result[i][j] = augmentedMatrix[i][j + n];
+        }
+    }
+
+    return result;
+}
