@@ -52,6 +52,7 @@ class PDE
         vector<double> createTerminalCondition(Option* option);
         void setProblem(vector<double> leftBoundary, vector<double> rightBoundary, vector<double> terminalCondition);
         void resolve();
+        double solution(double spot);
 
     private:
         vector<double> m_timeGrid;

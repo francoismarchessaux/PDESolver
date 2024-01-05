@@ -115,7 +115,7 @@ void PDE::setTimeGrid(const vector<double>& timeGrid)
 
 void PDE::setSpaceGrid(size_t nSpaceSteps, double multiplier, double vol, double strike)
 {
-    double lowerBoundary = strike - multiplier * vol * strike;
+    double lowerBoundary = (strike - multiplier * vol * strike) >= 0 ? strike - multiplier * vol * strike : 0;
     double upperBoundary = strike + multiplier * vol * strike;
     double deltaSpace = (upperBoundary - lowerBoundary) / static_cast<double>(nSpaceSteps);
 
@@ -242,4 +242,17 @@ void PDE::resolve()
         vector<double> rhs = Q * this->m_Solution[i + 1] + V;
         this->m_Solution[i] = -P.invert() * rhs;
     }
+}
+
+double PDE::solution(double spot)
+{
+    // Get closest indexes of spot in space grid
+    size_t iLower = 0;
+    while(this->m_spaceGrid[iLower] <= spot)
+        iLower++;
+
+    // Interpolation to find the price
+    double interpolated_price = this->m_Solution[0][iLower] + (spot - this->m_spaceGrid[iLower]) * ((this->m_Solution[0][iLower + 1] - this->m_Solution[0][iLower])/(this->m_spaceGrid[iLower + 1] - this->m_spaceGrid[iLower]));
+
+    return interpolated_price;
 }

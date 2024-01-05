@@ -7,31 +7,6 @@
 
 using namespace std;
 
-#if __cplusplus < 201103L
-#error "C++11 or later is required."
-#endif
-
-double generateRandomDouble(double min, double max) 
-{
-    return min + static_cast<double>(rand()) / (RAND_MAX / (max - min));
-}
-
-// Function to create a vector<vector<double>> of size n filled with random values
-std::vector<std::vector<double>> createRandomMatrix(int n, double minValue, double maxValue) {
-    std::vector<std::vector<double>> matrix(n, std::vector<double>(n));
-
-    // Seed for random number generation
-    std::srand(static_cast<unsigned>(std::time(0)));
-
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            matrix[i][j] = generateRandomDouble(minValue, maxValue);
-        }
-    }
-
-    return matrix;
-}
-
 int main()
 {
     // Options Parameters
@@ -41,8 +16,8 @@ int main()
     double r = 0.02;
     double vol = 0.2;
 
-    // Create Vanilla European option
-    Option callOption(T, K, OptionType::Call);
+    // Create Vanilla European Call option
+    Option callOption(T, K, OptionType::Put);
     cout << callOption << endl;
     
     // Compute option price with BlackScholes
@@ -52,11 +27,20 @@ int main()
     // PDE parameters
     size_t timeSteps = 50;
     double minTime = 0.0;
-    double maxTime = 1.0;
+    double maxTime = T;
     size_t spaceSteps = 100;
-    double multiplier = 2;
+    double multiplier = 10;
+    PDE pde(timeSteps, minTime, maxTime, spaceSteps, multiplier, vol, S);
+    vector<double> spaceGrid = pde.getSpaceGrid();
+    vector<double> timeGrid = pde.getTimeGrid();
     vector<double> leftBoundary(timeSteps, 0.0);
-    vector<double> rightBoundary(timeSteps, S);
+    double maxSpot = *max_element(spaceGrid.begin(), spaceGrid.end());
+    vector<double> rightBoundary;
+
+    for(int i = 0; i < timeGrid.size(); i++)
+    {
+        rightBoundary.push_back(exp(-r * (timeGrid[timeGrid.size()] - timeGrid[i])) * maxSpot);
+    }
 
     // Coefficient functions
     function<double(double, double)> a;
@@ -77,7 +61,6 @@ int main()
     };
 
     // Set up PDE
-    PDE pde(timeSteps, minTime, maxTime, spaceSteps, multiplier, vol, K);
     vector<double> terminalCondition = pde.createTerminalCondition(&callOption);
     pde.setProblem(leftBoundary, rightBoundary, terminalCondition);
     pde.setPDE(a, b, c, d);
@@ -86,12 +69,8 @@ int main()
     pde.resolve();
 
     // Display PDE solution
-    Matrix solutionMatrix = pde.getSolution();
-    vector<double> solution_t0 = solutionMatrix[0];
-    for(size_t i = 0; i < solution_t0.size(); i++)
-    {
-        cout << solution_t0[i] << " ";
-    }
+    double pde_price = pde.solution(S);
+    cout << "Price of the option with PDE is $" << pde_price << endl;
 
     return 0;
 }
