@@ -16,16 +16,16 @@ std::ostream& operator<<(std::ostream& os, const Option& option)
 }
 
 // Accessors
-OptionType Option::getOptionType() { return this->m_Type; }
-double Option::getExpiry() { return this->m_T; }
-double Option::getStrike() { return this->m_K; }
+OptionType Option::getOptionType() const { return m_Type; }
+double Option::getStrike() const { return m_K; }
+double Option::getExpiry() const { return m_T; }
 
 // Methods
-double Option::getPayoff(double S)
+double Option::getPayoff(double S) const
 {
-    if(this->m_Type == OptionType::Call)
-        return std::max(S - this->m_K, 0.0);
+    if(m_Type == OptionType::Call)
+        return std::max(S - m_K, 0.0);
     else
-        return std::max(this->m_K - S, 0.0);
+        return std::max(m_K - S, 0.0);
 }
 

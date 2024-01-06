@@ -2,7 +2,7 @@
 #include <iostream>
 
 // Class to represent the type of an option
-enum OptionType {Call, Put};
+enum class OptionType {Call, Put};
 
 // Class to represent an option with its parameters
 class Option
@@ -21,12 +21,12 @@ class Option
         friend std::ostream& operator<<(std::ostream& os, const Option& option);
 
         // Accessors
-        OptionType getOptionType();
-        double getExpiry();
-        double getStrike();
+        OptionType getOptionType() const;
+        double getExpiry() const;
+        double getStrike() const;
 
         // Methods
-        double getPayoff(double S);
+        double getPayoff(double S) const;
 
     private:
         OptionType m_Type;

@@ -1,154 +1,120 @@
-#include <vector>
-#include <functional>
 #include "PDE.h"
 #include "Matrix.h"
 
-using namespace std;
-
-// Overriding + operator for vectors
-vector<double> operator+(const vector<double>& v1, const vector<double>& v2) {
-    if (v1.size() != v2.size()) {
+// Overriding + operator to sum two vectors
+std::vector<double> operator+(const std::vector<double>& v1, const std::vector<double>& v2) 
+{
+    if (v1.size() != v2.size())
         throw std::invalid_argument("Vector addition: vectors must have the same size");
-    }
 
-    vector<double> res(v1.size());
-    for (size_t i = 0; i < v1.size(); ++i) {
+    std::vector<double> res(v1.size());
+
+    for (size_t i = 0; i < v1.size(); ++i)
         res[i] = v1[i] + v2[i];
-    }
+
+
     return res;
 }
 
-// Default Constructor
-PDE::PDE()
+// Initializer Constructor
+PDE::PDE(Option option, size_t nTimeSteps, double T, size_t nSpaceSteps, double multiplier, double vol, double spot, double r, std::function<double (double, double)>& a, std::function<double (double, double)>& b, std::function<double (double, double)>& c, std::function<double (double, double)>& d) : m_Option(option), m_a(a), m_b(b), m_c(c), m_d(d)
 {
     // Initialize the time grid
-    this->setTimeGrid(50, 0.0, 1.0);
+    setTimeGrid(nTimeSteps, T);
 
     // Initialize the space grid
-    this->setSpaceGrid(100, 2.0, 0.5, 100.0);
+    setSpaceGrid(nSpaceSteps, multiplier, vol, spot);
 
     // Initialize solution matrix
-    this->m_Solution = Matrix(50, 100);
-}
+    m_Solution = Matrix(nTimeSteps - 1, nSpaceSteps - 1);
 
-// Constructors
-PDE::PDE(size_t nTimeSteps, double minTime, double maxTime, size_t nSpaceSteps, double multiplier, double vol, double strike)
-{
-    // Initialize the time grid
-    this->setTimeGrid(nTimeSteps, minTime, maxTime);
+    // Set the terminal condition
+    setTerminalCondition();
 
-    // Initialize the space grid
-    this->setSpaceGrid(nSpaceSteps, multiplier, vol, strike);
-
-    // Initialize solution matrix
-    this->m_Solution = Matrix(nTimeSteps - 1, nSpaceSteps - 1);
-}
-
-PDE::PDE(vector<double>& timeGrid, vector<double> spaceGrid)
-{
-    // Initialize the time grid
-    this->m_timeGrid = timeGrid;
-    sort(this->m_timeGrid.begin(), this->m_timeGrid.end());
-
-    // Initialize the space grid
-    this->m_spaceGrid = spaceGrid;
-    sort(this->m_spaceGrid.begin(), this->m_spaceGrid.end());
-
-    // Initialize solution matrix
-    this->m_Solution = Matrix(timeGrid.size() - 1, spaceGrid.size() - 1);
-}
-
-// Copy Constructor
-PDE::PDE(const PDE& rhs)
-{
-    this->m_timeGrid = rhs.m_timeGrid;
-    this->m_spaceGrid = rhs.m_spaceGrid;
-    this->m_leftBoundary = rhs.m_leftBoundary;
-    this->m_rightBoundary = rhs.m_rightBoundary;
-    this->m_terminalCondition = rhs.m_terminalCondition;
-    this->m_a = rhs.m_a;
-    this->m_b = rhs.m_b;
-    this->m_c = rhs.m_c;
-    this->m_d = rhs.m_d; 
-    this->m_Solution = rhs.m_Solution;
-}
-
-// Assignement operator
-PDE& PDE::operator=(const PDE& rhs)
-{
-    if (this == &rhs)
-        return *this;
-
-    this->m_timeGrid = rhs.m_timeGrid;
-    this->m_spaceGrid = rhs.m_spaceGrid;
-    this->m_leftBoundary = rhs.m_leftBoundary;
-    this->m_rightBoundary = rhs.m_rightBoundary;
-    this->m_terminalCondition = rhs.m_terminalCondition;
-    this->m_a = rhs.m_a;
-    this->m_b = rhs.m_b;
-    this->m_c = rhs.m_c;
-    this->m_d = rhs.m_d; 
-    this->m_Solution = rhs.m_Solution;
-
-    return *this;
+    // Set the left and right boundaries
+    setBoundaries(nTimeSteps, r);
 }
 
 // Accessors
-vector<double> PDE::getTimeGrid() const { return this->m_timeGrid; }
-vector<double> PDE::getSpaceGrid() const { return this->m_spaceGrid; }
-Matrix PDE::getSolution() const { return this->m_Solution; }
+std::vector<double> PDE::getTimeGrid() const { return m_timeGrid; }
+std::vector<double> PDE::getSpaceGrid() const { return m_spaceGrid; }
 
 // Mutators
-void PDE::setTimeGrid(size_t nTimeSteps, double minTime, double maxTime)
+void PDE::setTimeGrid(size_t nTimeSteps, double T)
 {
-    double deltaTime = (maxTime - minTime) / static_cast<double>(nTimeSteps);
+    double deltaTime = T / static_cast<double>(nTimeSteps);
 
     for(size_t i = 0; i <= nTimeSteps; i++)
-        this->m_timeGrid.push_back(minTime + i * deltaTime);
+        m_timeGrid.push_back(i * deltaTime);
 }
 
-void PDE::setTimeGrid(const vector<double>& timeGrid)
+void PDE::setTimeGrid(const std::vector<double>& timeGrid)
 {
-    this->m_timeGrid = timeGrid;
-    sort(this->m_timeGrid.begin(), this->m_timeGrid.end());
+    m_timeGrid = timeGrid;
+    sort(m_timeGrid.begin(), m_timeGrid.end());
 }
 
-void PDE::setSpaceGrid(size_t nSpaceSteps, double multiplier, double vol, double strike)
+void PDE::setSpaceGrid(size_t nSpaceSteps, double multiplier, double vol, double spot)
 {
-    double lowerBoundary = (strike - multiplier * vol * strike) >= 0 ? strike - multiplier * vol * strike : 0;
-    double upperBoundary = strike + multiplier * vol * strike;
+    double lowerBoundary = (spot - multiplier * vol * spot) >= 0 ? spot - multiplier * vol * spot : 0;
+    double upperBoundary = spot + multiplier * vol * spot;
     double deltaSpace = (upperBoundary - lowerBoundary) / static_cast<double>(nSpaceSteps);
 
     for(size_t i = 0; i <= nSpaceSteps; i++)
-        this->m_spaceGrid.push_back(lowerBoundary + i * deltaSpace);
+        m_spaceGrid.push_back(lowerBoundary + i * deltaSpace);
 }
 
-void PDE::setSpaceGrid(const vector<double>& spaceGrid)
+void PDE::setSpaceGrid(const std::vector<double>& spaceGrid)
 {
-    this->m_spaceGrid = spaceGrid;
-    sort(this->m_spaceGrid.begin(), this->m_spaceGrid.end());
+    m_spaceGrid = spaceGrid;
+    sort(m_spaceGrid.begin(), m_spaceGrid.end());
 }
 
-// Partial derivatives
-double PDE::partial_t(size_t i) { return this->m_timeGrid[i + 1] - this->m_timeGrid[i]; }
-double PDE::partial_x(size_t i) { return this->m_spaceGrid[i + 1] - this->m_spaceGrid[i]; }
+void PDE::setTerminalCondition()
+{
+    // Terminal condition is the payoff at maturity
+    std::vector<double> res;
+    for(size_t i = 0; i < m_spaceGrid.size() - 1; i++)
+        res.push_back(m_Option.getPayoff(m_spaceGrid[i]));
 
-// Matrices
+    m_terminalCondition = res;
+}
+
+void PDE::setBoundaries(size_t nTimeSteps, double r)
+{
+    // Minimum price is bounded by 0
+    std::vector<double> leftBoundary(nTimeSteps, 0.0);
+
+    // Maximum price is bounded by max spot actualized
+    std::vector<double> rightBoundary;
+    double maxSpot = *max_element(m_spaceGrid.begin(), m_spaceGrid.end());
+    for(int i = 0; i < m_timeGrid.size(); i++)
+        rightBoundary.push_back(exp(-r * (m_timeGrid[m_timeGrid.size()] - m_timeGrid[i])) * maxSpot);
+
+    m_leftBoundary = leftBoundary;
+    m_rightBoundary = rightBoundary;
+}
+
+// Partial derivatives of t and x
+double PDE::partial_t(size_t i) const { return m_timeGrid[i + 1] - m_timeGrid[i]; }
+double PDE::partial_x(size_t i) const { return m_spaceGrid[i + 1] - m_spaceGrid[i]; }
+
+// Matrices computations
 Matrix PDE::computeP(size_t i, size_t m, double theta)
 {
     Matrix P(m - 1, m - 1);
-    double t_i = this->m_timeGrid[i];
+    double t_i = m_timeGrid[i];
 
     for(size_t j = 0; j < m - 1; j++)
     {
-        double x_i = this->m_spaceGrid[j];
-        double x_ip1 = this->m_spaceGrid[j+1];
-        P[j][j] = this->m_a(t_i, x_i) - ((1.0 / this->partial_t(i)) + ((2.0 * theta * this->m_c(t_i, x_i)) / pow(this->partial_x(i), 2)));
+        double x_i = m_spaceGrid[j];
+        double x_ip1 = m_spaceGrid[j+1];
+        P[j][j] = m_a(t_i, x_i) - ((1.0 / partial_t(i)) + ((2.0 * theta * m_c(t_i, x_i)) / pow(partial_x(i), 2)));
         
         if(j + 1 < m - 1)
         {
-            P[j][j + 1] = (this->m_b(t_i, x_i)/(2 * this->partial_x(i))) + ((theta * this->m_c(t_i, x_i))/pow(this->partial_x(i), 2));
-            P[j + 1][j] = -(this->m_b(t_i, x_ip1)/(2 * this->partial_x(i))) + ((theta * this->m_c(t_i, x_ip1))/pow(this->partial_x(i), 2));
+            P[j][j + 1] = (m_b(t_i, x_i)/(2 * partial_x(i))) + ((theta * m_c(t_i, x_i))/pow(partial_x(i), 2));
+            P[j + 1][j] = -(m_b(t_i, x_ip1)/(2 * partial_x(i))) + ((theta * m_c(t_i, x_ip1))/pow(partial_x(i), 2));
         }            
     }
 
@@ -158,89 +124,62 @@ Matrix PDE::computeP(size_t i, size_t m, double theta)
 Matrix PDE::computeQ(size_t i, size_t m, double theta)
 {
     Matrix Q(m - 1, m - 1);
-    double t_i = this->m_timeGrid[i];
+    double t_i = m_timeGrid[i];
 
     for(size_t j = 0; j < m - 1; j++)
     {
-        double x_i = this->m_spaceGrid[j];
-        double x_ip1 = this->m_spaceGrid[j+1];
-        Q[j][j] = 1/this->partial_t(i) - (2 * (1 - theta) * this->m_c(t_i, x_i)) / pow(this->partial_x(i), 2);
+        double x_i = m_spaceGrid[j];
+        double x_ip1 = m_spaceGrid[j+1];
+        Q[j][j] = 1/partial_t(i) - (2 * (1 - theta) * m_c(t_i, x_i)) / pow(partial_x(i), 2);
         
         if(j + 1 < m - 1)
         {
-            Q[j][j + 1] = ((1 - theta) * this->m_c(t_i, x_i)) / pow(this->partial_x(i), 2);
-            Q[j + 1][j] = ((1 - theta) * this->m_c(t_i, x_ip1)) / pow(this->partial_x(i), 2);
+            Q[j][j + 1] = ((1 - theta) * m_c(t_i, x_i)) / pow(partial_x(i), 2);
+            Q[j + 1][j] = ((1 - theta) * m_c(t_i, x_ip1)) / pow(partial_x(i), 2);
         }            
     }
 
     return Q;
 }
 
-vector<double> PDE::computeV(size_t i, size_t m, double theta)
+std::vector<double> PDE::computeV(size_t i, size_t m, double theta)
 {
-    vector<double> V(m - 1, 0.0);
-    double t_i = this->m_timeGrid[i];
+    std::vector<double> V(m - 1, 0.0);
+    double t_i = m_timeGrid[i];
 
     for(int j = 0; j < m - 1; j++)
     {
-        double x_i = this->m_spaceGrid[j];
-        double x_ip1 = this->m_spaceGrid[j+1];
+        double x_i = m_spaceGrid[j];
+        double x_ip1 = m_spaceGrid[j+1];
         if(j == 0)
-            V[j] = this->m_d(t_i, x_i) + (-this->m_b(t_i, x_i)/(2*this->partial_x(i)) + (theta * this->m_c(t_i, x_i)) / pow(this->partial_x(i), 2)) * this->m_leftBoundary[i] + (((1 - theta) * this->m_c(t_i, x_i)) / pow(this->partial_x(i), 2)) * this->m_leftBoundary[i + 1];
+            V[j] = m_d(t_i, x_i) + (-m_b(t_i, x_i)/(2*partial_x(i)) + (theta * m_c(t_i, x_i)) / pow(partial_x(i), 2)) * m_leftBoundary[i] + (((1 - theta) * m_c(t_i, x_i)) / pow(partial_x(i), 2)) * m_leftBoundary[i + 1];
         else if(j == m - 2)
-            V[j] = this->m_d(t_i, x_i) + (-this->m_b(t_i, x_i)/(2*this->partial_x(i)) + (theta * this->m_c(t_i, x_i)) / pow(this->partial_x(i), 2)) * this->m_rightBoundary[i] + (((1 - theta) * this->m_c(t_i, x_i)) / pow(this->partial_x(i), 2)) * this->m_rightBoundary[i + 1];
+            V[j] = m_d(t_i, x_i) + (-m_b(t_i, x_i)/(2*partial_x(i)) + (theta * m_c(t_i, x_i)) / pow(partial_x(i), 2)) * m_rightBoundary[i] + (((1 - theta) * m_c(t_i, x_i)) / pow(partial_x(i), 2)) * m_rightBoundary[i + 1];
         else
-            V[j] = this->m_d(t_i, x_i);
+            V[j] = m_d(t_i, x_i);
     }
 
     return V;
 }
 
 // PDE Methods
-void PDE::setPDE(function<double (double, double)>& a, function<double (double, double)>& b, function<double (double, double)>& c, function<double (double, double)>& d)
-{
-    this->m_a = a;
-    this->m_b = b;
-    this->m_c = c;
-    this->m_d = d;
-}
-
-vector<double> PDE::createTerminalCondition(Option* option)
-{
-    vector<double> res;
-
-    for(size_t i = 0; i < this->m_spaceGrid.size() - 1; i++)
-    {
-        res.push_back(option->getPayoff(this->m_spaceGrid[i]));
-    }
-
-    return res;
-}
-
-void PDE::setProblem(vector<double> leftBoundary, vector<double> rightBoundary, vector<double> terminalCondition)
-{
-    this->m_leftBoundary = leftBoundary;
-    this->m_rightBoundary = rightBoundary;
-    this->m_terminalCondition = terminalCondition;
-}
-
 void PDE::resolve()
 {
-    size_t m = this->m_spaceGrid.size();
-    size_t n = this-> m_timeGrid.size();
+    size_t m = m_spaceGrid.size();
+    size_t n =  m_timeGrid.size();
     double theta = 0.5;
     
     //Set terminal condition
-    this->m_Solution[n - 1] = this->m_terminalCondition;
+    m_Solution[n - 1] = m_terminalCondition;
 
     // Numerical propagation to solve the PDE
     for(int i = n - 2; i >= 0; i--)
     {
         Matrix P = computeP(i, m, theta);
         Matrix Q = computeQ(i, m, theta);
-        vector<double> V = computeV(i, m, theta);
-        vector<double> rhs = Q * this->m_Solution[i + 1] + V;
-        this->m_Solution[i] = -P.invert() * rhs;
+        std::vector<double> V = computeV(i, m, theta);
+        std::vector<double> rhs = Q * m_Solution[i + 1] + V;
+        m_Solution[i] = -P.invert() * rhs;
     }
 }
 
@@ -248,11 +187,11 @@ double PDE::solution(double spot)
 {
     // Get closest indexes of spot in space grid
     size_t iLower = 0;
-    while(this->m_spaceGrid[iLower] <= spot)
+    while(m_spaceGrid[iLower] <= spot)
         iLower++;
 
     // Interpolation to find the price
-    double interpolated_price = this->m_Solution[0][iLower] + (spot - this->m_spaceGrid[iLower]) * ((this->m_Solution[0][iLower + 1] - this->m_Solution[0][iLower])/(this->m_spaceGrid[iLower + 1] - this->m_spaceGrid[iLower]));
+    double interpolated_price = m_Solution[0][iLower] + (spot - m_spaceGrid[iLower]) * ((m_Solution[0][iLower + 1] - m_Solution[0][iLower])/(m_spaceGrid[iLower + 1] - m_spaceGrid[iLower]));
 
     return interpolated_price;
 }

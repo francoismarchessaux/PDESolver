@@ -1,68 +1,52 @@
 #pragma once
 #include <functional>
-#include <vector>
 #include "Matrix.h"
 #include "Option.h"
-
-using namespace std;
-
-enum PDEType {Backward, Forward};
 
 class PDE
 {
     public:
-        // Default Constructor
-        PDE();
-
         // Initializer Constructors
-        PDE(size_t nTimeSteps, double minTime, double maxTime, size_t nSpaceSteps, double multiplier, double vol, double spot);
-        PDE(vector<double>& timeGrid, vector<double> spaceGrid);
-
-        // Copy Constructor
-        PDE(const PDE& rhs); 
+        PDE(Option option, size_t nTimeSteps, double T, size_t nSpaceSteps, double multiplier, double vol, double spot, double r, std::function<double (double, double)>& a, std::function<double (double, double)>& b, std::function<double (double, double)>& c, std::function<double (double, double)>& d);
 
         // Destructor
         virtual ~PDE() {};
 
-        // Assignement operator
-        PDE& operator=(const PDE& rhs);
-
         // Accessors
-        vector<double> getTimeGrid() const;
-        vector<double> getSpaceGrid() const;
-        Matrix getSolution() const;
-
+        std::vector<double> getTimeGrid() const;
+        std::vector<double> getSpaceGrid() const;
+        
         // Mutators
-        void setTimeGrid(size_t nTimeSteps, double minTime, double maxTime);
-        void setTimeGrid(const vector<double>& timeGrid);
+        void setTimeGrid(size_t nTimeSteps, double T);
+        void setTimeGrid(const std::vector<double>& timeGrid);
         void setSpaceGrid(size_t nSpaceSteps, double multiplier, double vol, double spot);
-        void setSpaceGrid(const vector<double>& spaceGrid);
+        void setSpaceGrid(const std::vector<double>& spaceGrid);
+        void setTerminalCondition();
+        void setBoundaries(size_t nTimeSteps, double r);
 
         // Partial derivatives
-        double partial_t(size_t i);
-        double partial_x(size_t i);
+        double partial_t(size_t i) const;
+        double partial_x(size_t i) const;
 
-        // Matrices
+        // Matrices computation
         Matrix computeP(size_t i, size_t m, double theta);
         Matrix computeQ(size_t i, size_t m, double theta);
-        vector<double> computeV(size_t i, size_t m, double theta);
+        std::vector<double> computeV(size_t i, size_t m, double theta);
 
         // PDE methods
-        void setPDE(function<double (double, double)>& a, function<double (double, double)>& b, function<double (double, double)>& c, function<double (double, double)>& d);
-        vector<double> createTerminalCondition(Option* option);
-        void setProblem(vector<double> leftBoundary, vector<double> rightBoundary, vector<double> terminalCondition);
         void resolve();
         double solution(double spot);
 
     private:
-        vector<double> m_timeGrid;
-        vector<double> m_spaceGrid;
-        vector<double> m_leftBoundary;
-        vector<double> m_rightBoundary;
-        vector<double> m_terminalCondition;
-        function<double (double, double)> m_a;
-        function<double (double, double)> m_b;
-        function<double (double, double)> m_c;
-        function<double (double, double)> m_d;
+        Option m_Option;
+        std::vector<double> m_timeGrid;
+        std::vector<double> m_spaceGrid;
+        std::vector<double> m_leftBoundary;
+        std::vector<double> m_rightBoundary;
+        std::vector<double> m_terminalCondition;
+        std::function<double (double, double)> m_a;
+        std::function<double (double, double)> m_b;
+        std::function<double (double, double)> m_c;
+        std::function<double (double, double)> m_d;
         Matrix m_Solution;
 };

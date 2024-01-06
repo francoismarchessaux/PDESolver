@@ -283,24 +283,10 @@ Matrix Matrix::transpose()
     return transposed;
 }
 
-/*
-Matrix Matrix::invert()
-{
-    double det = this->determinant();
-    
-    if(det == 0)
-        throw invalid_argument("Matrix is not invertible : determinant is 0");
-
-    Matrix adjugate = this->cofactorMatrix().transpose();
-    return adjugate/det;
-}
-*/
-
 Matrix Matrix::invert() 
 {
-    if (this->m_nRows != this->m_nCols) {
+    if (this->m_nRows != this->m_nCols)
         throw std::invalid_argument("Matrix must be square for inversion");
-    }
 
     size_t n = m_nRows;
     Matrix result(n, n);

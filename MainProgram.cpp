@@ -16,61 +16,27 @@ int main()
     double r = 0.02;
     double vol = 0.2;
 
-    // Create Vanilla European Call option
-    Option callOption(T, K, OptionType::Put);
-    cout << callOption << endl;
-    
-    // Compute option price with BlackScholes
-    BlackScholes bs_pricer(&callOption, S, r, vol);
-    cout << "Price of the option with Black-Scholes is $" << bs_pricer() << endl;
-
-    // PDE parameters
+    // PDE Parameters
     size_t timeSteps = 50;
-    double minTime = 0.0;
-    double maxTime = T;
     size_t spaceSteps = 100;
     double multiplier = 10;
-    PDE pde(timeSteps, minTime, maxTime, spaceSteps, multiplier, vol, S);
-    vector<double> spaceGrid = pde.getSpaceGrid();
-    vector<double> timeGrid = pde.getTimeGrid();
-    vector<double> leftBoundary(timeSteps, 0.0);
-    double maxSpot = *max_element(spaceGrid.begin(), spaceGrid.end());
-    vector<double> rightBoundary;
+    function<double(double, double)> a = [r](double t, double x) { return -r; };
+    function<double(double, double)> b = [r](double t, double x) { return r * x; };
+    function<double(double, double)> c = [vol](double t, double x) { return (pow(vol, 2) / 2) * pow(x, 2); };
+    function<double(double, double)> d = [](double t, double x) { return 0; };
 
-    for(int i = 0; i < timeGrid.size(); i++)
-    {
-        rightBoundary.push_back(exp(-r * (timeGrid[timeGrid.size()] - timeGrid[i])) * maxSpot);
-    }
+    // Create Vanilla European option
+    Option option(T, K, OptionType::Put);
+    cout << option << endl;
+    
+    // Compute option price with BlackScholes
+    BlackScholes bs(option, S, r, vol);
+    cout << "Price of the option with Black-Scholes is $" << bs.price() << endl;
 
-    // Coefficient functions
-    function<double(double, double)> a;
-    a = [r](double t, double x) {
-        return -r;
-    };
-    function<double(double, double)> b;
-    b = [r](double t, double x) {
-        return r*x;
-    };
-    function<double(double, double)> c;
-    c = [vol](double t, double x) {
-        return (pow(vol, 2) / 2) * pow(x, 2);
-    };
-    function<double(double, double)> d;
-    d = [](double t, double x) {
-        return 0;
-    };
-
-    // Set up PDE
-    vector<double> terminalCondition = pde.createTerminalCondition(&callOption);
-    pde.setProblem(leftBoundary, rightBoundary, terminalCondition);
-    pde.setPDE(a, b, c, d);
-
-    // Solve PDE
+    // Compute option price with PDE
+    PDE pde(option, timeSteps, T, spaceSteps, multiplier, vol, S, r, a, b, c, d);
     pde.resolve();
-
-    // Display PDE solution
-    double pde_price = pde.solution(S);
-    cout << "Price of the option with PDE is $" << pde_price << endl;
+    cout << "Price of the option with PDE is $" << pde.solution(S) << endl;
 
     return 0;
 }
