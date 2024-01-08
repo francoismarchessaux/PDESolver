@@ -10,7 +10,7 @@ class PDE
         PDE(Option option, size_t nTimeSteps, double T, size_t nSpaceSteps, double multiplier, double vol, double spot, double r, std::function<double (double, double)>& a, std::function<double (double, double)>& b, std::function<double (double, double)>& c, std::function<double (double, double)>& d);
 
         // Destructor
-        virtual ~PDE() {};
+        ~PDE() {};
 
         // Accessors
         std::vector<double> getTimeGrid() const;

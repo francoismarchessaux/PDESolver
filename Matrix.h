@@ -10,37 +10,34 @@ class Matrix
 
         // Initializer Constructors
         Matrix(size_t nRows, size_t nCols);
-        Matrix(std::vector<std::vector<double> >& values);
+        Matrix(const std::vector<std::vector<double> >& values);
 
         // Destructor
-        virtual ~Matrix(){}
+        ~Matrix(){}
 
         // Operators
         std::vector<double>& operator[](size_t i);
-        Matrix operator/(const double val);
-        Matrix operator+(Matrix& rhs);
-        Matrix operator+(const double value);
-        Matrix operator+(std::vector<double> vect);
-        Matrix operator-(Matrix& rhs);
-        Matrix operator-(const double value);
-        Matrix operator-();
-        Matrix operator*(Matrix& rhs);
-        std::vector<double> operator*(std::vector<double>& vect);
-        Matrix operator*(const double value);
+        Matrix operator/(double val) const;
+        Matrix operator+(const Matrix& rhs) const;
+        Matrix operator+(double value) const;
+        Matrix operator+(const std::vector<double> vect) const;
+        Matrix operator-(const Matrix& rhs) const;
+        Matrix operator-(double value) const;
+        Matrix operator-() const;
+        Matrix operator*(const Matrix& rhs) const;
+        std::vector<double> operator*(const std::vector<double>& vect) const;
+        Matrix operator*(double value) const;
 
         // Accessors
-        double getNCols();
-        double getNRows();
+        size_t getNCols();
+        size_t getNRows();
 
         // Mutators
-        void setMatrix(std::vector<std::vector<double> >& values);
+        void setMatrix(const std::vector<std::vector<double> >& values);
         
         // Matrix Methods
-        void display();
-        double determinant();
-        Matrix cofactorMatrix();
-        Matrix transpose();
-        Matrix invert();
+        void display() const;
+        Matrix invert() const;
 
     private:
         size_t m_nCols;

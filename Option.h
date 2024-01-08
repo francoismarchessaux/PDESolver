@@ -1,10 +1,8 @@
 #pragma once
 #include <iostream>
 
-// Class to represent the type of an option
 enum class OptionType {Call, Put};
 
-// Class to represent an option with its parameters
 class Option
 {
     public:
@@ -12,10 +10,10 @@ class Option
         Option();
 
         // Initializer Constructor
-        Option(double expiry, double strike, OptionType optionType);
+        Option(double expiry, double strike, double div, double repo, OptionType optionType);
 
         // Destructor
-        virtual ~Option() {};
+        ~Option() {};
 
         // Operators
         friend std::ostream& operator<<(std::ostream& os, const Option& option);
@@ -24,6 +22,8 @@ class Option
         OptionType getOptionType() const;
         double getExpiry() const;
         double getStrike() const;
+        double getDiv() const;
+        double getRepo() const;
 
         // Methods
         double getPayoff(double S) const;
@@ -32,4 +32,6 @@ class Option
         OptionType m_Type;
         double m_T;
         double m_K;
+        double m_div;
+        double m_repo;
 };

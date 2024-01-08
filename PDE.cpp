@@ -1,5 +1,8 @@
-#include "PDE.h"
+#include <cmath>
+#include <algorithm>
+#include "Option.h"
 #include "Matrix.h"
+#include "PDE.h"
 
 // Overriding + operator to sum two vectors
 std::vector<double> operator+(const std::vector<double>& v1, const std::vector<double>& v2) 
@@ -11,7 +14,6 @@ std::vector<double> operator+(const std::vector<double>& v1, const std::vector<d
 
     for (size_t i = 0; i < v1.size(); ++i)
         res[i] = v1[i] + v2[i];
-
 
     return res;
 }
@@ -44,7 +46,7 @@ void PDE::setTimeGrid(size_t nTimeSteps, double T)
 {
     double deltaTime = T / static_cast<double>(nTimeSteps);
 
-    for(size_t i = 0; i <= nTimeSteps; i++)
+    for(size_t i = 0; i < nTimeSteps; i++)
         m_timeGrid.push_back(i * deltaTime);
 }
 
@@ -85,11 +87,13 @@ void PDE::setBoundaries(size_t nTimeSteps, double r)
     // Minimum price is bounded by 0
     std::vector<double> leftBoundary(nTimeSteps, 0.0);
 
-    // Maximum price is bounded by max spot actualized
+    // Maximum price is bounded by max spot actualized with remaining maturity
     std::vector<double> rightBoundary;
     double maxSpot = *max_element(m_spaceGrid.begin(), m_spaceGrid.end());
-    for(int i = 0; i < m_timeGrid.size(); i++)
-        rightBoundary.push_back(exp(-r * (m_timeGrid[m_timeGrid.size()] - m_timeGrid[i])) * maxSpot);
+    double div = m_Option.getDiv();
+    double repo = m_Option.getRepo();
+    for(int i = 0; i < nTimeSteps; i++)
+        rightBoundary.push_back(exp((r - div - repo) * (m_timeGrid[nTimeSteps - 1] - m_timeGrid[i])) * maxSpot);
 
     m_leftBoundary = leftBoundary;
     m_rightBoundary = rightBoundary;
@@ -190,7 +194,7 @@ double PDE::solution(double spot)
     while(m_spaceGrid[iLower] <= spot)
         iLower++;
 
-    // Interpolation to find the price
+    // Linear interpolation to find the price
     double interpolated_price = m_Solution[0][iLower] + (spot - m_spaceGrid[iLower]) * ((m_Solution[0][iLower + 1] - m_Solution[0][iLower])/(m_spaceGrid[iLower + 1] - m_spaceGrid[iLower]));
 
     return interpolated_price;

@@ -1,8 +1,9 @@
 #include <iostream>
 #include <functional>
-#include "Matrix.h"
+#include <cmath>
 #include "Option.h"
 #include "BlackScholes.h"
+#include "Matrix.h"
 #include "PDE.h"
 
 using namespace std;
@@ -15,18 +16,22 @@ int main()
     double T = 1.0;
     double r = 0.02;
     double vol = 0.2;
+    double div = 0.0;
+    double repo = 0.0;
 
     // PDE Parameters
-    size_t timeSteps = 50;
-    size_t spaceSteps = 100;
-    double multiplier = 10;
+    size_t timeSteps = 10;
+    size_t spaceSteps = 75;
+    double multiplier = 5;
+
+    // Coefficient functions found by identification
     function<double(double, double)> a = [r](double t, double x) { return -r; };
-    function<double(double, double)> b = [r](double t, double x) { return r * x; };
+    function<double(double, double)> b = [r, div, repo](double t, double x) { return (r - div - repo) * x; };
     function<double(double, double)> c = [vol](double t, double x) { return (pow(vol, 2) / 2) * pow(x, 2); };
     function<double(double, double)> d = [](double t, double x) { return 0; };
 
     // Create Vanilla European option
-    Option option(T, K, OptionType::Put);
+    Option option(T, K, div, repo, OptionType::Call);
     cout << option << endl;
     
     // Compute option price with BlackScholes
@@ -40,3 +45,44 @@ int main()
 
     return 0;
 }
+
+// BS Price : $4.94387
+// T steps : 50
+// S steps : 75
+// multiplier : 5
+// Price : $4.94267
+
+// T steps : 10
+// S steps : 75
+// multiplier : 5 
+// Price : 
+
+// T steps : 
+// S steps : 
+// multiplier : 
+// Price : 
+
+// T steps : 
+// S steps : 
+// multiplier : 
+// Price : 
+
+// T steps : 
+// S steps : 
+// multiplier : 
+// Price : 
+
+// T steps : 
+// S steps : 
+// multiplier : 
+// Price : 
+
+// T steps : 
+// S steps : 
+// multiplier : 
+// Price : 
+
+// T steps : 
+// S steps : 
+// multiplier : 
+// Price : 
