@@ -22,7 +22,7 @@ int main()
 
     // PDE Parameters
     size_t timeSteps = 50;
-    size_t spaceSteps = 25;
+    size_t spaceSteps = 75;
     double multiplier = 4;
 
     // Coefficient functions found by identification
@@ -46,19 +46,3 @@ int main()
 
     return 0;
 }
-
-// BS Price : $4.944
-// T steps : 50
-// S steps : 75
-// multiplier : 4
-// Price : $5.072
-
-// T steps : 10
-// S steps : 75
-// multiplier : 4
-// Price : $4.132
-
-// T steps : 50
-// S steps : 30
-// multiplier : 4
-// Price : $4.213
