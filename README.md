@@ -10,6 +10,8 @@ To this end we have implemented several classes :
 - Class **_Matrix_**: This class creates a Matrix object, and overrides mathematical operators to perform computations with matrices, vectors and scalars. The function ```invert()``` checks if a matrix is invertible, and if yes, inverts it with the Gaussian elimination method.
 - Class **_PDE_**: This class allows to solve a PDE with the finite difference method. The constructor initalizes the time grid and space grid for the discretization of the problem, the terminal condition which is given by the payoff of the option at maturity, and the boundaries. The price of the option is bounded by 0 and by the maximum discounted spot of the space grid. Then, the function ```resolve()``` will use the finite difference method to solve the PDE. Finally, the price is extracted by the function ```solution()```, which performs a linear interpolation to find the price of the option at t = 0 and corresponding to the current spot price.
 
+All operations are centralized in the main file **_MainProgram.cpp_**.
+
 ## Results
 
 We have used these parameters for the option : 
