@@ -25,8 +25,8 @@ class PDE
         void setBoundaries(size_t nTimeSteps, double r);
 
         // Partial derivatives
-        double partial_t(size_t i) const;
-        double partial_x(size_t i) const;
+        double partial_t() const;
+        double partial_x() const;
 
         // Matrices computation
         Matrix computeP(size_t i, size_t m, double theta);

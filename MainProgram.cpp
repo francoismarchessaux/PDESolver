@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <functional>
 #include <cmath>
 #include "Option.h"
@@ -20,9 +21,9 @@ int main()
     double repo = 0.0;
 
     // PDE Parameters
-    size_t timeSteps = 10;
-    size_t spaceSteps = 75;
-    double multiplier = 5;
+    size_t timeSteps = 50;
+    size_t spaceSteps = 25;
+    double multiplier = 4;
 
     // Coefficient functions found by identification
     function<double(double, double)> a = [r](double t, double x) { return -r; };
@@ -36,53 +37,28 @@ int main()
     
     // Compute option price with BlackScholes
     BlackScholes bs(option, S, r, vol);
-    cout << "Price of the option with Black-Scholes is $" << bs.price() << endl;
+    cout << "Price of the option with Black-Scholes is $" << std::fixed << std::setprecision(3) << bs.price() << endl;
 
     // Compute option price with PDE
     PDE pde(option, timeSteps, T, spaceSteps, multiplier, vol, S, r, a, b, c, d);
     pde.resolve();
-    cout << "Price of the option with PDE is $" << pde.solution(S) << endl;
+    cout << "Price of the option with PDE is $" << std::fixed << std::setprecision(3) << pde.solution(S) << endl;
 
     return 0;
 }
 
-// BS Price : $4.94387
+// BS Price : $4.944
 // T steps : 50
 // S steps : 75
-// multiplier : 5
-// Price : $4.94267
+// multiplier : 4
+// Price : $5.072
 
 // T steps : 10
 // S steps : 75
-// multiplier : 5 
-// Price : 
+// multiplier : 4
+// Price : $4.132
 
-// T steps : 
-// S steps : 
-// multiplier : 
-// Price : 
-
-// T steps : 
-// S steps : 
-// multiplier : 
-// Price : 
-
-// T steps : 
-// S steps : 
-// multiplier : 
-// Price : 
-
-// T steps : 
-// S steps : 
-// multiplier : 
-// Price : 
-
-// T steps : 
-// S steps : 
-// multiplier : 
-// Price : 
-
-// T steps : 
-// S steps : 
-// multiplier : 
-// Price : 
+// T steps : 50
+// S steps : 30
+// multiplier : 4
+// Price : $4.213

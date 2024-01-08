@@ -62,7 +62,7 @@ void PDE::setSpaceGrid(size_t nSpaceSteps, double multiplier, double vol, double
     double upperBoundary = spot + multiplier * vol * spot;
     double deltaSpace = (upperBoundary - lowerBoundary) / static_cast<double>(nSpaceSteps);
 
-    for(size_t i = 0; i <= nSpaceSteps; i++)
+    for(size_t i = 0; i < nSpaceSteps; i++)
         m_spaceGrid.push_back(lowerBoundary + i * deltaSpace);
 }
 
@@ -100,8 +100,8 @@ void PDE::setBoundaries(size_t nTimeSteps, double r)
 }
 
 // Partial derivatives of t and x
-double PDE::partial_t(size_t i) const { return m_timeGrid[i + 1] - m_timeGrid[i]; }
-double PDE::partial_x(size_t i) const { return m_spaceGrid[i + 1] - m_spaceGrid[i]; }
+double PDE::partial_t() const { return m_timeGrid[1] - m_timeGrid[0]; }
+double PDE::partial_x() const { return m_spaceGrid[1] - m_spaceGrid[0]; }
 
 // Matrices computations
 Matrix PDE::computeP(size_t i, size_t m, double theta)
@@ -113,12 +113,12 @@ Matrix PDE::computeP(size_t i, size_t m, double theta)
     {
         double x_i = m_spaceGrid[j];
         double x_ip1 = m_spaceGrid[j+1];
-        P[j][j] = m_a(t_i, x_i) - ((1.0 / partial_t(i)) + ((2.0 * theta * m_c(t_i, x_i)) / pow(partial_x(i), 2)));
+        P[j][j] = m_a(t_i, x_i) - ((1.0 / partial_t()) + ((2.0 * theta * m_c(t_i, x_i)) / pow(partial_x(), 2)));
         
         if(j + 1 < m - 1)
         {
-            P[j][j + 1] = (m_b(t_i, x_i)/(2 * partial_x(i))) + ((theta * m_c(t_i, x_i))/pow(partial_x(i), 2));
-            P[j + 1][j] = -(m_b(t_i, x_ip1)/(2 * partial_x(i))) + ((theta * m_c(t_i, x_ip1))/pow(partial_x(i), 2));
+            P[j][j + 1] = (m_b(t_i, x_i)/(2 * partial_x())) + ((theta * m_c(t_i, x_i))/pow(partial_x(), 2));
+            P[j + 1][j] = -(m_b(t_i, x_ip1)/(2 * partial_x())) + ((theta * m_c(t_i, x_ip1))/pow(partial_x(), 2));
         }            
     }
 
@@ -134,12 +134,12 @@ Matrix PDE::computeQ(size_t i, size_t m, double theta)
     {
         double x_i = m_spaceGrid[j];
         double x_ip1 = m_spaceGrid[j+1];
-        Q[j][j] = 1/partial_t(i) - (2 * (1 - theta) * m_c(t_i, x_i)) / pow(partial_x(i), 2);
+        Q[j][j] = 1/partial_t() - (2 * (1 - theta) * m_c(t_i, x_i)) / pow(partial_x(), 2);
         
         if(j + 1 < m - 1)
         {
-            Q[j][j + 1] = ((1 - theta) * m_c(t_i, x_i)) / pow(partial_x(i), 2);
-            Q[j + 1][j] = ((1 - theta) * m_c(t_i, x_ip1)) / pow(partial_x(i), 2);
+            Q[j][j + 1] = ((1 - theta) * m_c(t_i, x_i)) / pow(partial_x(), 2);
+            Q[j + 1][j] = ((1 - theta) * m_c(t_i, x_ip1)) / pow(partial_x(), 2);
         }            
     }
 
@@ -156,9 +156,9 @@ std::vector<double> PDE::computeV(size_t i, size_t m, double theta)
         double x_i = m_spaceGrid[j];
         double x_ip1 = m_spaceGrid[j+1];
         if(j == 0)
-            V[j] = m_d(t_i, x_i) + (-m_b(t_i, x_i)/(2*partial_x(i)) + (theta * m_c(t_i, x_i)) / pow(partial_x(i), 2)) * m_leftBoundary[i] + (((1 - theta) * m_c(t_i, x_i)) / pow(partial_x(i), 2)) * m_leftBoundary[i + 1];
+            V[j] = m_d(t_i, x_i) + (-m_b(t_i, x_i)/(2*partial_x()) + (theta * m_c(t_i, x_i)) / pow(partial_x(), 2)) * m_leftBoundary[i] + (((1 - theta) * m_c(t_i, x_i)) / pow(partial_x(), 2)) * m_leftBoundary[i + 1];
         else if(j == m - 2)
-            V[j] = m_d(t_i, x_i) + (-m_b(t_i, x_i)/(2*partial_x(i)) + (theta * m_c(t_i, x_i)) / pow(partial_x(i), 2)) * m_rightBoundary[i] + (((1 - theta) * m_c(t_i, x_i)) / pow(partial_x(i), 2)) * m_rightBoundary[i + 1];
+            V[j] = m_d(t_i, x_i) + (-m_b(t_i, x_i)/(2*partial_x()) + (theta * m_c(t_i, x_i)) / pow(partial_x(), 2)) * m_rightBoundary[i] + (((1 - theta) * m_c(t_i, x_i)) / pow(partial_x(), 2)) * m_rightBoundary[i + 1];
         else
             V[j] = m_d(t_i, x_i);
     }
@@ -170,7 +170,7 @@ std::vector<double> PDE::computeV(size_t i, size_t m, double theta)
 void PDE::resolve()
 {
     size_t m = m_spaceGrid.size();
-    size_t n =  m_timeGrid.size();
+    size_t n = m_Solution.getNRows();
     double theta = 0.5;
     
     //Set terminal condition
